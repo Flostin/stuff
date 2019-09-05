@@ -1,10 +1,20 @@
+/*
+ * TODO:
+ * Add play button or menu
+ */
+
 int GRID_SIZE = 20;
 int CELL_SIZE;
 int TICK_RATE = 10;
-boolean gameOver = false;
+boolean gameRunning = false;
 
 Snake snake;
 Apple apple;
+
+void initGame() {
+    snake = new Snake();
+    apple = new Apple();
+}
 
 void drawGrid() {
     stroke(75);
@@ -19,13 +29,24 @@ void drawGrid() {
     noStroke();
 }
 
+void playButton() {
+    fill(200, 100);
+    ellipse(width / 2, height / 2, width / 2, height / 2);
+    
+    float theta = 0;
+    fill(0, 150);
+    triangle(
+        cos(theta) * 100 + width / 2, sin(theta) * 100 + height / 2,
+        cos(theta + TAU / 3) * 100 + width / 2, sin(theta + TAU / 3) * 100 + height / 2,
+        cos(theta + 2 * TAU / 3) * 100 + width / 2, sin(theta + 2 * TAU / 3) * 100 + height / 2);
+}
+
 void setup() {
     size(600, 600);
     frameRate(10);
     
     CELL_SIZE = width / GRID_SIZE;
-    snake = new Snake();
-    apple = new Apple();
+    initGame();
 }
 
 void draw() {
@@ -35,12 +56,25 @@ void draw() {
     snake.run();
     
     drawGrid();
+    println(keyCode);
     
-    if (gameOver) {noLoop();}
+    if (!gameRunning) {
+        playButton();
+        noLoop();
+    }
 }
 
 void keyPressed() {
     snake.getInput();
+}
+
+void mouseClicked() {
+    if (!gameRunning) {
+        gameRunning = true;
+        initGame();
+        
+        loop();
+    }
 }
 
 public class Snake {
@@ -70,8 +104,11 @@ public class Snake {
     }
     
     private void draw() {
-        for (PVector segment : segments) {
-            fill(segment.equals(head) ? color(0, 175, 0) : color(0, 255, 0));
+        PVector segment;
+        for (int i = 0; i < segments.size(); i++) {
+            segment = segments.get(i);
+            
+            fill(0, map(i, 0, segments.size(), 100, 255), 0);
             rect(segment.x, segment.y, CELL_SIZE, CELL_SIZE);
         }
     }
@@ -102,15 +139,19 @@ public class Snake {
         /* Sets the dirtection of the snake to the arrow key pressed */
         switch (keyCode) {
             case LEFT:
+            case 65:
                 direction.set(-CELL_SIZE, 0);
                 break;
             case RIGHT:
+            case 68:
                 direction.set(CELL_SIZE, 0);
                 break;
             case UP:
+            case 87:
                 direction.set(0, -CELL_SIZE);
                 break;
             case DOWN:
+            case 83:
                 direction.set(0, CELL_SIZE);
                 break;
         }
@@ -129,15 +170,16 @@ public class Snake {
     /* Checks if the snake is out of bounds */
     private void checkWalls() {
         if (head.x < 0 || head.x >= width || head.y < 0 || head.y >= height) {
-            gameOver = true;
+            gameRunning = false;
         }
     }
     
     /* Checks if the head is inside the body of the snake */
     private void checkSegments() {
-        /*if (segments.subList(0, segments.size()).contains(head)) {
-            gameOver = true;
-        }*/
+        int lastIndex = max(segments.size() - 1, 1);
+        if (segments.subList(0, lastIndex).contains(head)) {
+            gameRunning = false;
+        }
     }
     
     public void setDirection(int x, int y) {
